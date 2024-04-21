@@ -1,6 +1,7 @@
 import pandas as pd
 
 counties = pd.read_csv('input/countycodes.csv')
+county_inc = pd.read_csv('input/county_unemployment.csv')
 
 for year in [2020, 2040]:
     for rcp in ['rcp45', 'rcp85']:
@@ -24,6 +25,7 @@ for year in [2020, 2040]:
         county_year_rcp = pd.merge(county_year_rcp, mortality, how='left', left_on='fips', right_on='region').rename(columns={'q0.5':'mortality'})
         county_year_rcp.drop('region', axis=1, inplace=True)
         county_year_rcp.rename(columns={'fips': 'county'}, inplace=True)
+        county_year_rcp = pd.merge(county_year_rcp, county_inc, how='left', on='county')
         county_year_rcp.fillna(0, inplace=True)
 
         county_year_rcp['total'] = (county_year_rcp['agriculture'] + county_year_rcp['prop_crime'] +
@@ -31,11 +33,9 @@ for year in [2020, 2040]:
                                     county_year_rcp['mortality'])
 
         total = county_year_rcp['total']
-        county_year_rcp['safety'] = 100 - (total - total.min()) * 100 / (total.max() - total.min())
+        county_year_rcp['safety'] = (total + 35) * 100 / 70
 
-        print("Min GDP Change:       " + rcp + "  " + str(year) + "  " + str(county_year_rcp['total'].min()))
-        print("Max GDP Change:       " + rcp + "  " + str(year) + "  " + str(county_year_rcp['total'].max()))
-        print("Average Safety Score: " + rcp + "  " + str(year) + "  " + str(county_year_rcp['safety'].mean()) + "\n")
+        print(county_year_rcp.head(10))
 
         county_year_rcp.to_csv("output/" + str(year + 10) + "-" + rcp + ".csv", index=False)
 
